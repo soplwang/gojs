@@ -1,0 +1,17 @@
+{
+  "name": "gojs",
+  "version": "0.0.1",
+  "description": "go.js, Golang like channels and go.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "golang",
+    "channel",
+    "yield",
+    "generator"
+  ],
+  "author": "Wang Wenlin",
+  "license": "MIT"
+}
