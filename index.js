@@ -2,22 +2,29 @@
 
 exports.Channel = Channel;
 exports.go = go;
+exports.join = join;
 exports.then = then;
 
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
 //
 // go(function* (chan) {
+//   var ch1 = Channel();
+//
 //   var r1 = yield db.query('SELECT 1', chan);
 //   var r2 = yield request('http://www.google.com', chan);
 //
-//   var c1 = Channel();
-//   var c2 = Channel();
-//   var r3, r4;
+//   db1.query('SELECT 1 FROM dummy', then(ch1, function (res) { ch1(null, res[0]); }));
+//   db2.query('SELECT 3', chan);
+//   var r3 = yield join(ch1, chan, chan);
 //
-//   db1.query('SELECT 1 FROM dummy', then(c1, function (res) { c1(null, res[0]); }));
-//   db2.query('SELECT 3', c2);
-//   r3 = yield c1;
-//   r4 = yield c2;
+//   db1.query('SELECT 1', ch1);
+//   db2.query('SELECT 3', chan);
+//   var r4 = yield join(ch1, chan, function (e, res) { chan(e, res[1]); });
+//
+//   redis.get('k1', chan);
+//   redis.hget('k2', ch1);
+//   var rk1 = yield;
+//   var rk2 = yield ch1;
 //
 //   redis.get('k1', chan);
 //   redis.hget('k2', chan);
@@ -25,18 +32,17 @@ exports.then = then;
 //   var rk2 = yield;
 // });
 
-function Channel(args) {
+function Channel(arg0) {
   var q_ = new Array(arguments.length);
   var readable_ = [];
   for (var i in arguments) q_[i] = arguments[i];
 
-  chan.write = write;
+  chan.ctor_ = Channel;
   chan.poll = poll;
   chan.read = function () { return q_.shift(); }
-  chan.ctor_ = Channel;
   return chan;
 
-  function chan(args) {
+  function chan(arg0) {
     var args = new Array(arguments.length);
     for (var i in arguments) args[i] = arguments[i];
     return write(args);
@@ -56,15 +62,16 @@ function Channel(args) {
 function go(machine) {
   var chan = Channel([]);
   var inst = machine(chan);
+  var runq = chan;
 
   (function loop() {
     for (;;) {
-      var msg = chan.read();
-      if (!msg) return chan.poll(loop);
+      var msg = runq.read();
+      if (!msg) return runq.poll(loop);
       var iter = next(msg);
       if (iter.done) return;
-      var res = iter.value;
-      if (res && res.ctor_ === Channel) repl(res);
+      runq = iter.value || chan;
+      if (runq.ctor_ !== Channel) runq = chan;
     }
   })();
 
@@ -77,13 +84,24 @@ function go(machine) {
       return inst.next(msg.slice(1));
     }
   }
+}
 
-  function repl(chan_) {
-    chan_.poll(function () {
-      var msg = chan_.read();
-      return msg ? chan.write(msg) : repl(chan_);
-    });
-  }
+function join(chan, cb) {
+  var args = new Array(arguments.length);
+  for (var i in arguments) args[i] = arguments[i];
+
+  go(function* (chan) {
+    var l = args.length - 1;
+    var arr = new Array(l);
+    var cb = args[l];
+
+    try {
+      for (var i = 0; i < l; i++) arr[i] = yield args[i];
+      cb(null, arr);
+    } catch (e) {
+      cb(e);
+    }
+  });
 }
 
 function then(err, cb) {
