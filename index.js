@@ -2,6 +2,7 @@
 
 exports.Channel = Channel;
 exports.go = go;
+exports.bind = bind;
 exports.then = then;
 
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
@@ -19,11 +20,11 @@ exports.then = then;
 //   var r4 = yield;
 //
 //   go(function* (ch3) {
-//     db1.query('SELECT 1', ch1);
-//     db2.query('SELECT 3', ch3);
-//     var r5 = yield ch1;
-//     var r6 = yield;
-//     chan(null, r5[0] + r6[0]);
+//     db1.query('SELECT 1', bind(ch3, 'r5'));
+//     db2.query('SELECT 3', bind(ch3, 'r6'));
+//     var rx = yield;
+//     var ry = yield;
+//     chan(null, rx[0] + ry[0]);
 //   });
 //   yield;
 //
@@ -61,9 +62,20 @@ function Channel(arg0) {
 }
 
 function go(machine) {
+  var inst;
   var chan = Channel([]);
-  var inst = machine(chan);
   var runq = chan;
+
+  if (arguments.length <= 1) {
+    inst = machine(chan);
+  } else if (arguments.length <= 2) {
+    inst = machine(chan, arguments[1]);
+  } else {
+    var l = arguments.length;
+    var args = new Array(l - 1);
+    for (var i = 1; i < l; i++) args[i-1] = arguments[i];
+    inst = machine.apply(null, [].concat(chan, args));
+  }
 
   (function loop() {
     for (;;) {
@@ -83,6 +95,28 @@ function go(machine) {
       return inst.next(msg[1]);
     } else {
       return inst.next(msg.slice(1));
+    }
+  }
+}
+
+function bind(chan, bind0) {
+  var l = arguments.length;
+  var binds = new Array(l - 1);
+  for (var i = 1; i < l; i++) binds[i-1] = arguments[i];
+
+  return function (err_, arg0, arg1) {
+    if (err_) {
+      err_.extra = (binds.length <= 1) ? binds[0] : binds;
+      chan(err_);
+    } else if (arguments.length <= 2) {
+      chan.apply(null, [].concat(err_, binds, arg0));
+    } else if (arguments.length <= 3) {
+      chan.apply(null, [].concat(err_, binds, arg0, arg1));
+    } else {
+      var l = arguments.length;
+      var args = new Array(l - 1);
+      for (var i = 1; i < l; i++) args[i-1] = arguments[i];
+      chan.apply(null, [].concat(err_, binds, args));
     }
   }
 }

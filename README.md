@@ -17,11 +17,11 @@ go(function* (chan) {
   var r4 = yield;
 
   go(function* (ch3) {
-    db1.query('SELECT 1', ch1);
-    db2.query('SELECT 3', ch3);
-    var r5 = yield ch1;
-    var r6 = yield;
-    chan(null, r5[0] + r6[0]);
+    db1.query('SELECT 1', bind(ch3, 'r5'));
+    db2.query('SELECT 3', bind(ch3, 'r6'));
+    var rx = yield;
+    var ry = yield;
+    chan(null, rx[0] + ry[0]);
   });
   yield;
 
