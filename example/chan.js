@@ -1,5 +1,6 @@
 var Channel = require('../').Channel;
 var go = require('../').go;
+var bind = require('../').bind;
 var then = require('../').then;
 
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
