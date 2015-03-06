@@ -90,6 +90,8 @@ function go(machine) {
     }
   })();
 
+  return chan;
+
   function next(msg) {
     if (msg[0]) {
       return inst.throw(msg[0]);
@@ -120,7 +122,7 @@ function bind(chan, bind0) {
       for (var i = 1; i < l; i++) args[i-1] = arguments[i];
       chan.apply(null, [].concat(err_, binds, args));
     }
-  }
+  };
 }
 
 function then(err, cb) {

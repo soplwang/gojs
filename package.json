@@ -1,10 +1,11 @@
 {
   "name": "gojs",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "go.js, Golang like channels and go.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha -R spec",
+    "jshint": "jshint index.js test/ example/ || exit 0"
   },
   "keywords": [
     "golang",

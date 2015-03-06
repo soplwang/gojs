@@ -1,3 +1,5 @@
+/* Copyright 2015, Wang Wenlin */
+
 var Channel = require('../').Channel;
 var go = require('../').go;
 var bind = require('../').bind;
