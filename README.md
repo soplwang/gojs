@@ -29,7 +29,7 @@ go(function* (chan) {
   });
 
   try {
-    var r5 = yield;
+    var r7 = yield;
   } catch (e) {}
 
   redis.get('k1', chan);
