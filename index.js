@@ -1,4 +1,5 @@
 /* Copyright 2015, Wang Wenlin */
+"use strict";
 
 exports.Channel = Channel;
 exports.go = go;
