@@ -98,7 +98,7 @@ describe('go.js', function () {
       });
     });
 
-    it('yield specific chan would make runloop to read from it', function (done) {
+    it('yield specific chan would make runloop to read from that', function (done) {
       go(function* (chan) {
         var ch2 = Channel();
         process.nextTick(function () { chan(null, 1); });
