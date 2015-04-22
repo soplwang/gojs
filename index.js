@@ -40,6 +40,12 @@ exports.then = then;
 //   var r4 = yield;
 // });
 
+/**
+ * Golang like channel.
+ * @constructor
+ * @param {Varargs} arg0 - Varargs of prequeued messages
+ * @returns {Channel} - new channel
+ */
 function Channel(arg0) {
   var q_ = new Array(arguments.length);
   var readable_ = [];
@@ -67,7 +73,13 @@ function Channel(arg0) {
   }
 }
 
-function go(machine) {
+/**
+ * Golang like go function.
+ * @param {Generator} machine - main yieldable generator
+ * @param {Varargs} arg0 - Varargs forward to the generator
+ * @returns {Channel} - channel binds on the generator
+ */
+function go(machine, arg0) {
   var inst;
   var chan = Channel([]);
   var runq = chan;
@@ -107,6 +119,12 @@ function go(machine) {
   }
 }
 
+/**
+ * Bind params to channel, like Function#bind().
+ * @param {Channel} channel - target channel
+ * @param {Varargs} bind0 - Varargs forward to channel
+ * @returns {Function(e, v)} - view of channel with binds
+ */
 function bind(chan, bind0) {
   var l = arguments.length;
   var binds = new Array(l - 1);
@@ -129,6 +147,12 @@ function bind(chan, bind0) {
   };
 }
 
+/**
+ * Wrap standalone error and success callbacks into node.js' standard callback.
+ * @param {Function(e)} err - error channel or callback
+ * @param {Function(v)} cb - success callback
+ * @returns {Function(e, v)} - standard callback
+ */
 function then(err, cb) {
   return function (err_, arg0, arg1) {
     if (err_) {
