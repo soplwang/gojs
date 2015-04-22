@@ -1,6 +1,6 @@
 {
   "name": "gojs",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "go.js, Golang like channels and go.",
   "main": "index.js",
   "scripts": {
