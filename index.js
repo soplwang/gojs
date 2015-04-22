@@ -62,7 +62,7 @@ function Channel(arg0) {
   }
 
   function poll(cb) {
-    if (q_.length) return cb();
+    if (q_.length) return process.nextTick(cb);
     return readable_.push(cb);
   }
 }
