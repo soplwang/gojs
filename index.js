@@ -48,12 +48,12 @@ exports.then = then;
  */
 function Channel(arg0) {
   var q_ = new Array(arguments.length);
-  var readable_ = [];
+  var reader_ = [];
   for (var i in arguments) q_[i] = arguments[i];
 
   chan.ctor_ = Channel;
-  chan.poll = poll;
   chan.read = function () { return q_.shift(); }
+  chan.wait = wait;
   return chan;
 
   function chan(arg0) {
@@ -64,12 +64,12 @@ function Channel(arg0) {
 
   function write(msg) {
     q_.push(msg);
-    while (readable_.length) process.nextTick(readable_.shift());
+    while (reader_.length) process.nextTick(reader_.shift());
   }
 
-  function poll(cb) {
+  function wait(cb) {
     if (q_.length) return process.nextTick(cb);
-    return readable_.push(cb);
+    return reader_.push(cb);
   }
 }
 
@@ -98,7 +98,7 @@ function go(machine, arg0) {
   (function loop() {
     for (;;) {
       var msg = runq.read();
-      if (!msg) return runq.poll(loop);
+      if (!msg) return runq.wait(loop);
       var iter = next(msg);
       if (iter.done) return;
       runq = iter.value || chan;

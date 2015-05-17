@@ -10,17 +10,38 @@ var then = require('../').then;
 
 describe('go.js', function () {
   describe('Channel', function () {
-    it('can write message and poll to read', function (done) {
+    it('can write message and read', function () {
       var chan = Channel();
       chan(null, 1);
 
-      chan.poll(function () {
+      var msg = chan.read();
+      assert.equal(msg[1], 1);
+      assert(!chan.read());
+    });
+
+    it('can write message and wait to read', function (done) {
+      var chan = Channel();
+      chan(null, 1);
+
+      chan.wait(function () {
         var msg = chan.read();
         assert.equal(msg[1], 1);
         assert(!chan.read());
         return done();
       });
-    })
+    });
+
+    it('can wait to read and write message later', function (done) {
+      var chan = Channel();
+
+      chan.wait(function () {
+        var msg = chan.read();
+        assert.equal(msg[1], 1);
+        assert(!chan.read());
+        return done();
+      });
+      chan(null, 1);
+    });
   });
 
   describe('go()', function () {
