@@ -1,4 +1,4 @@
-go.js, Golang like channels and go.
+go.js, Golang like channels, goroutine and go.
 ====
 
 ```javascript

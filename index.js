@@ -75,9 +75,9 @@ function Channel(arg0) {
 
 /**
  * Golang like go function.
- * @param {Generator} machine - main yieldable generator
- * @param {Varargs} arg0 - Varargs forward to the generator
- * @returns {Channel} - channel binds on the generator
+ * @param {Generator} machine - resumable goroutine
+ * @param {Varargs} arg0 - Varargs forward to the goroutine
+ * @returns {Channel} - channel binds on the goroutine
  */
 function go(machine, arg0) {
   var inst;

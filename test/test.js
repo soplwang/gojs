@@ -45,13 +45,14 @@ describe('go.js', function () {
   });
 
   describe('go()', function () {
-    it('only support generator', function () {
+    it('only support generator as goroutine', function () {
       go(function* () {});
       assert.throws(function () { go(function () {}); });
     });
 
-    it('addition args for generator', function (done) {
-      go(function* (chan, done) { done(); }, done);
+    it('addition args for goroutine', function (done) {
+      function* mm(chan, done) { done(); }
+      go(mm, done);
     });
 
     it('yield from default chan', function (done) {
@@ -81,23 +82,6 @@ describe('go.js', function () {
       });
     });
 
-    it('yield combined with async function call', function (done) {
-      go(function* (chan) {
-        var res = yield process.nextTick(function () { chan(null, 1); });
-        assert.equal(res, 1);
-        return done();
-      });
-    });
-
-    it('throw in generator would crash without protects', function () {
-      assert.throws(function () {
-        go(function* () { throw Error('err'); });
-      });
-      assert.throws(function () {
-        go(function* () { chan(null, Error('err')); yield; });
-      });
-    });
-
     it('write error to default chan would throw by yield', function (done) {
       go(function* (chan) {
         try {
@@ -109,7 +93,26 @@ describe('go.js', function () {
       })(Error('err'));
     });
 
-    it('embed child go()', function (done) {
+    it('throw in goroutine would crash if without protects', function () {
+      assert.throws(function () {
+        go(function* () { throw Error('err'); });
+      });
+      assert.throws(function () {
+        go(function* (chan) { chan(Error('err')); yield; });
+      });
+    });
+
+    it('yield specific chan would make read from it', function (done) {
+      go(function* (chan) {
+        var ch2 = Channel();
+        process.nextTick(function () { chan(null, 1); });
+        process.nextTick(function () { ch2(null, 2); });
+        assert((yield) === 1 && (yield ch2) === 2);
+        return done();
+      });
+    });
+
+    it('support embedding child goroutine', function (done) {
       go(function* (chan) {
         go(function* (ch2) {
           chan(null, 1);
@@ -119,12 +122,28 @@ describe('go.js', function () {
       });
     });
 
-    it('yield specific chan would make runloop to read from that', function (done) {
-      go(function* (chan) {
-        var ch2 = Channel();
-        process.nextTick(function () { chan(null, 1); });
-        process.nextTick(function () { ch2(null, 2); });
-        assert((yield) === 1 && (yield ch2) === 2);
+    it('support delegate to another generator/goroutine', function (done) {
+      function* mm(chan) {
+        assert((yield) === 1);
+        assert((yield) === 2);
+        return 3;
+      }
+      var chan = go(function *(chan) {
+        assert((yield* mm(chan)) === 3);
+        return done();
+      });
+      chan(null, 1);
+      chan(null, 2);
+    });
+
+    it('two goroutine communicate thru channel', function (done) {
+      var ch1 = go(function* (ch1) {
+        var c = yield;
+        ch2(null, c+1);
+      });
+      var ch2 = go(function* (ch2) {
+        ch1(null, 1);
+        assert.equal((yield), 2);
         return done();
       });
     });
