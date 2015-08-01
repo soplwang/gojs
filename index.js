@@ -8,15 +8,15 @@ exports.then = then;
 
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
 //
-// go(function* (chan) {
-//   db.query('SELECT 1', chan);
-//   var r1 = yield chan;
+// go(function* (ch) {
+//   db.query('SELECT 1', ch);
+//   var r1 = yield ch;
 //
-//   request('http://www.google.com', chan);
-//   var r2 = yield;
+//   request('http://www.google.com', ch);
+//   var r2 = yield ch;
 //
-//   redis.get('k1', chan);
-//   redis.hget('k2', chan);
+//   redis.get('k1', ch);
+//   redis.hget('k2', ch);
 //   var rk1 = yield;
 //   var rk2 = yield;
 //
@@ -25,17 +25,16 @@ exports.then = then;
 //     db2.query('SELECT 3', bind(ch2, 'r4'));
 //     var rx = yield;
 //     var ry = yield;
-//     chan(null, rx[1] + ry[1]);
+//     ch(null, rx[1] + ry[1]);
 //   });
 //
 //   try {
-//     var rz = yield;
+//     var rz = yield ch;
 //   } catch (e) {}
 //
 //   var ch3 = Channel();
-//
 //   db.query('SELECT 1 FROM dummy', then(ch3, function (res) { ch3(null, res[0]); }));
-//   db2.query('SELECT 3', chan);
+//   db2.query('SELECT 3', ch);
 //   var r3 = yield ch3;
 //   var r4 = yield;
 // });
@@ -48,7 +47,7 @@ exports.then = then;
  */
 function Channel(arg0) {
   var q_ = new Array(arguments.length);
-  var reader_ = [];
+  var waitq_ = [];
   for (var i in arguments) q_[i] = arguments[i];
 
   chan.ctor_ = Channel;
@@ -64,35 +63,35 @@ function Channel(arg0) {
 
   function write(msg) {
     q_.push(msg);
-    while (reader_.length) process.nextTick(reader_.shift());
+    while (waitq_.length) process.nextTick(waitq_.shift());
   }
 
   function wait(cb) {
     if (q_.length) return process.nextTick(cb);
-    return reader_.push(cb);
+    waitq_.push(cb);
   }
 }
 
 /**
  * Golang like go function.
- * @param {Generator} machine - resumable goroutine
+ * @param {Generator} goroutine - resumable goroutine
  * @param {Varargs} arg0 - Varargs forward to the goroutine
  * @returns {Channel} - channel binds on the goroutine
  */
-function go(machine, arg0) {
+function go(goroutine, arg0) {
   var inst;
   var chan = Channel([]);
   var runq = chan;
 
   if (arguments.length <= 1) {
-    inst = machine(chan);
+    inst = goroutine(chan);
   } else if (arguments.length <= 2) {
-    inst = machine(chan, arguments[1]);
+    inst = goroutine(chan, arguments[1]);
   } else {
     var l = arguments.length;
-    var args = new Array(l - 1);
+    var args = new Array(l-1);
     for (var i = 1; i < l; i++) args[i-1] = arguments[i];
-    inst = machine.apply(null, [].concat(chan, args));
+    inst = goroutine.apply(null, [].concat(chan, args));
   }
 
   (function loop() {
@@ -127,7 +126,7 @@ function go(machine, arg0) {
  */
 function bind(chan, bind0) {
   var l = arguments.length;
-  var binds = new Array(l - 1);
+  var binds = new Array(l-1);
   for (var i = 1; i < l; i++) binds[i-1] = arguments[i];
 
   return function (err_, arg0, arg1) {
@@ -140,7 +139,7 @@ function bind(chan, bind0) {
       chan.apply(null, [].concat(err_, binds, arg0, arg1));
     } else {
       var l = arguments.length;
-      var args = new Array(l - 1);
+      var args = new Array(l-1);
       for (var i = 1; i < l; i++) args[i-1] = arguments[i];
       chan.apply(null, [].concat(err_, binds, args));
     }
@@ -163,7 +162,7 @@ function then(err, cb) {
       cb(arg0, arg1);
     } else {
       var l = arguments.length;
-      var args = new Array(l - 1);
+      var args = new Array(l-1);
       for (var i = 1; i < l; i++) args[i-1] = arguments[i];
       cb.apply(null, args);
     }
