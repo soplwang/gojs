@@ -16,8 +16,10 @@ go(function* (ch) {
 
   redis.get('k1', ch);
   redis.hget('k2', ch);
+
   var rk1 = yield;
   var rk2 = yield;
+  console.log(rk1, rk2);
 
   go(function* (ch2) {
     db.query('SELECT 1', bind(ch2, 'r3'));
@@ -29,11 +31,14 @@ go(function* (ch) {
 
   try {
     var rz = yield ch;
+    console.log(rz);
   } catch (e) {}
 
   var ch3 = Channel();
   db.query('SELECT 1 FROM dummy', then(ch3, function (res) { ch3(null, res[0]); }));
   db2.query('SELECT 3', ch);
+
   var r3 = yield ch3;
   var r4 = yield;
+  console.log(r3, r4);
 });
