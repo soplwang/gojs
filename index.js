@@ -94,7 +94,7 @@ function go(goroutine, arg) {
 /**
  * Bind params to channel, like Function#bind().
  * @param {Channel} channel - target channel
- * @param {Varargs} arg - Varargs bind to channel
+ * @param {Varargs} arg - Varargs binds on channel
  * @returns {Function(e, v)} - view of channel with binds
  */
 function bind(chan, arg) {
