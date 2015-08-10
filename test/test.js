@@ -1,4 +1,5 @@
 /* Copyright 2015, Wang Wenlin */
+"use strict";
 
 var assert = require('assert');
 var util = require('util');
@@ -7,6 +8,8 @@ var Channel = require('../').Channel;
 var go = require('../').go;
 var bind = require('../').bind;
 var then = require('../').then;
+
+require('../').patchPromise();
 
 describe('go.js', function () {
   describe('Channel', function () {
@@ -200,6 +203,30 @@ describe('go.js', function () {
         assert.equal(r2, 2);
         assert.equal(r3, 3);
       })(null, 1, 2, 3);
+    });
+  });
+
+  describe('patchPromise()', function () {
+    it('merge resolve and reject callbacks into one', function (done) {
+      var prms = new Promise(function (resolve, reject) { resolve(1); });
+      var prms2 = new Promise(function (resolve, reject) { reject(Error('err')); });
+
+      prms.done(function (e, val) {
+        try {
+          assert.equal(e, null);
+          assert.equal(val, 1);
+        } catch (e) {
+          return done(e);
+        }
+
+        prms2.done(function (e, val) {
+          try {
+            assert.equal(e.message, 'err');
+          } catch (e) {
+            return done(e);
+          }
+        }).then(done);
+      });
     });
   });
 });

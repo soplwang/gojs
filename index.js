@@ -5,64 +5,32 @@ exports.Channel = Channel;
 exports.go = go;
 exports.bind = bind;
 exports.then = then;
+exports.patchPromise = patchPromise;
 
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
 //
-// go(function* (ch) {
-//   db.query('SELECT 1', ch);
-//   var r1 = yield ch;
-//
-//   request('http://www.google.com', ch);
-//   var r2 = yield ch;
-//
-//   redis.get('k1', ch);
-//   redis.hget('k2', ch);
-//
-//   var rk1 = yield;
-//   var rk2 = yield;
-//   console.log(rk1, rk2);
-//
-//   go(function* (ch2) {
-//     db.query('SELECT 1', bind(ch2, 'r3'));
-//     db2.query('SELECT 3', bind(ch2, 'r4'));
-//     var rx = yield;
-//     var ry = yield;
-//     ch(null, rx[1] + ry[1]);
-//   });
-//
-//   try {
-//     var rz = yield ch;
-//     console.log(rz);
-//   } catch (e) {}
-//
-//   var ch3 = Channel();
-//   db.query('SELECT 1 FROM dummy', then(ch3, function (res) { ch3(null, res[0]); }));
-//   db2.query('SELECT 3', ch);
-//
-//   var r3 = yield ch3;
-//   var r4 = yield;
-//   console.log(r3, r4);
-// });
 
 /**
  * Golang like channel.
  * @constructor
- * @param {Varargs} arg0 - Varargs of prequeued messages
+ * @param {Varargs} arg - Varargs of prequeued messages
  * @returns {Channel} - new channel
  */
-function Channel(arg0) {
-  var q_ = new Array(arguments.length);
+function Channel(arg) {
+  var l = arguments.length;
+  var q_ = new Array(l);
   var waitq_ = [];
-  for (var i in arguments) q_[i] = arguments[i];
+  for (var i = 0; i < l; i++) q_[i] = arguments[i];
 
   chan.ctor_ = Channel;
   chan.read = function () { return q_.shift(); }
   chan.wait = wait;
   return chan;
 
-  function chan(arg0) {
-    var args = new Array(arguments.length);
-    for (var i in arguments) args[i] = arguments[i];
+  function chan(arg) {
+    var l = arguments.length;
+    var args = new Array(l);
+    for (var i = 0; i < l; i++) args[i] = arguments[i];
     return write(args);
   }
 
@@ -80,10 +48,10 @@ function Channel(arg0) {
 /**
  * Golang like go function.
  * @param {Generator} goroutine - resumable goroutine
- * @param {Varargs} arg0 - Varargs forward to the goroutine
+ * @param {Varargs} arg - Varargs forward to the goroutine
  * @returns {Channel} - channel binds on the goroutine
  */
-function go(goroutine, arg0) {
+function go(goroutine, arg) {
   var inst;
   var chan = Channel([]);
   var runq = chan;
@@ -91,7 +59,7 @@ function go(goroutine, arg0) {
   if (arguments.length <= 1) {
     inst = goroutine(chan);
   } else if (arguments.length <= 2) {
-    inst = goroutine(chan, arguments[1]);
+    inst = goroutine(chan, arg);
   } else {
     var l = arguments.length;
     var args = new Array(l-1);
@@ -126,22 +94,22 @@ function go(goroutine, arg0) {
 /**
  * Bind params to channel, like Function#bind().
  * @param {Channel} channel - target channel
- * @param {Varargs} bind0 - Varargs forward to channel
+ * @param {Varargs} arg - Varargs bind to channel
  * @returns {Function(e, v)} - view of channel with binds
  */
-function bind(chan, bind0) {
+function bind(chan, arg) {
   var l = arguments.length;
   var binds = new Array(l-1);
   for (var i = 1; i < l; i++) binds[i-1] = arguments[i];
 
-  return function (err_, arg0, arg1) {
+  return function (err_, arg, arg2) {
     if (err_) {
       err_.extra = (binds.length <= 1) ? binds[0] : binds;
       chan(err_);
     } else if (arguments.length <= 2) {
-      chan.apply(null, [].concat(err_, binds, arg0));
+      chan.apply(null, [].concat(err_, binds, arg));
     } else if (arguments.length <= 3) {
-      chan.apply(null, [].concat(err_, binds, arg0, arg1));
+      chan.apply(null, [].concat(err_, binds, arg, arg2));
     } else {
       var l = arguments.length;
       var args = new Array(l-1);
@@ -152,24 +120,38 @@ function bind(chan, bind0) {
 }
 
 /**
- * Wrap standalone error and success callbacks into node.js' standard callback.
+ * Wrap standalone error and success callbacks into node.js style callback.
  * @param {Function(e)} err - error channel or callback
  * @param {Function(v)} cb - success callback
- * @returns {Function(e, v)} - standard callback
+ * @returns {Function(e, v)} - node.js style callback
  */
 function then(err, cb) {
-  return function (err_, arg0, arg1) {
+  return function (err_, arg, arg2) {
     if (err_) {
       err(err_);
     } else if (arguments.length <= 2) {
-      cb(arg0);
+      cb(arg);
     } else if (arguments.length <= 3) {
-      cb(arg0, arg1);
+      cb(arg, arg2);
     } else {
       var l = arguments.length;
       var args = new Array(l-1);
       for (var i = 1; i < l; i++) args[i-1] = arguments[i];
       cb.apply(null, args);
     }
+  };
+}
+
+/**
+ * Patch ES6 Promise to add non-standard Promise#done() support
+ * @param {Function(e, v)} cb - node.js style callback
+ * @returns {Promise} - chaining promise
+ */
+function patchPromise() {
+  Promise.prototype.done = function (cb) {
+    return this.then(
+      function (val) { cb(null, val); },
+      function (err) { cb(err); }
+      );
   };
 }

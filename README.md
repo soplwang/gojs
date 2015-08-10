@@ -7,21 +7,24 @@ var go = require('gojs').go;
 var bind = require('gojs').bind;
 var then = require('gojs').then;
 
+require('gojs').patchPromise();
+
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
 //
 go(function* (ch) {
   db.query('SELECT 1', ch);
-  var r1 = yield ch;
+  var rows = yield ch;
 
   request('http://www.google.com', ch);
-  var r2 = yield ch;
+  var [resp, body] = yield;
 
-  redis.get('k1', ch);
-  redis.hget('k2', ch);
-
+  redis.hget('k1', ch);
+  redis.get('k2', ch);
   var rk1 = yield;
   var rk2 = yield;
-  console.log(rk1, rk2);
+
+  db.queryPromise('SELECT 1').then(print).done(ch);
+  var rp = yield ch;
 
   go(function* (ch2) {
     db.query('SELECT 1', bind(ch2, 'r3'));
