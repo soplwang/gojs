@@ -7,8 +7,6 @@ var go = require('gojs').go;
 var bind = require('gojs').bind;
 var then = require('gojs').then;
 
-require('gojs').patchPromise();
-
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
 //
 go(function* (ch) {
@@ -23,9 +21,6 @@ go(function* (ch) {
   var rk1 = yield;
   var rk2 = yield;
 
-  db.queryPromise('SELECT 1').then(print).done(ch);
-  var rp = yield ch;
-
   go(function* (ch2) {
     db.query('SELECT 1', bind(ch2, 'r3'));
     db2.query('SELECT 3', bind(ch2, 'r4'));
@@ -36,15 +31,20 @@ go(function* (ch) {
 
   try {
     var rz = yield ch;
-    console.log(rz);
   } catch (e) {}
 
+  // Free channel
   var ch3 = Channel();
-  db.query('SELECT 1 FROM dummy', then(ch3, function (res) { ch3(null, res[0]); }));
-  db2.query('SELECT 3', ch);
 
-  var r3 = yield ch3;
-  var r4 = yield;
-  console.log(r3, r4);
+  db.query('SELECT 1 FROM dummy', then(ch, function (res) { ch(null, res[0]); }));
+  db2.query('SELECT 3', ch3);
+  var r3 = yield;
+  var r4 = yield ch3;
+
+  // ES6 Promise
+  var prms = db.queryPromise('SELECT 1').then(print);
+  var rp = yield prms;
+  var rp2 = yield prms;
+  var rp3 = yield ES.readFilePromise('/etc/hosts');
 });
 ```

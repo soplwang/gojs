@@ -9,8 +9,6 @@ var go = require('../').go;
 var bind = require('../').bind;
 var then = require('../').then;
 
-require('../').patchPromise();
-
 describe('go.js', function () {
   describe('Channel', function () {
     it('can write message and read', function () {
@@ -96,7 +94,7 @@ describe('go.js', function () {
       })(Error('err'));
     });
 
-    it('throw in goroutine would crash if without protects', function () {
+    it('throw in goroutine would crash if without any protect', function () {
       assert.throws(function () {
         go(function* () { throw Error('err'); });
       });
@@ -139,7 +137,7 @@ describe('go.js', function () {
       chan(null, 2);
     });
 
-    it('two goroutine communicate thru channel', function (done) {
+    it('two goroutine can communicate thru channel', function (done) {
       var ch1 = go(function* (ch1) {
         var c = yield;
         ch2(null, c+1);
@@ -148,6 +146,31 @@ describe('go.js', function () {
         ch1(null, 1);
         assert.equal((yield), 2);
         return done();
+      });
+    });
+
+    it('support yield ES6 promise to read from it', function (done) {
+      go(function* (chan) {
+        var prms = new Promise(function (resolve, reject) {
+          process.nextTick(function () {
+            resolve('resolved');
+          });
+        });
+        assert.equal((yield prms), 'resolved');
+        assert.equal((yield prms), 'resolved');
+        assert.equal((yield prms), 'resolved');
+
+        var prms2 = new Promise(function (resolve, reject) {
+          process.nextTick(function () {
+            reject(Error('rejected'));
+          });
+        });
+        try {
+          yield prms2;
+          done(Error('prms2 should throw'));
+        } catch (e) {
+          done();
+        }
       });
     });
   });
@@ -203,30 +226,6 @@ describe('go.js', function () {
         assert.equal(r2, 2);
         assert.equal(r3, 3);
       })(null, 1, 2, 3);
-    });
-  });
-
-  describe('patchPromise()', function () {
-    it('merge resolve and reject callbacks into one', function (done) {
-      var prms = new Promise(function (resolve, reject) { resolve(1); });
-      var prms2 = new Promise(function (resolve, reject) { reject(Error('err')); });
-
-      prms.done(function (e, val) {
-        try {
-          assert.equal(e, null);
-          assert.equal(val, 1);
-        } catch (e) {
-          return done(e);
-        }
-
-        prms2.done(function (e, val) {
-          try {
-            assert.equal(e.message, 'err');
-          } catch (e) {
-            return done(e);
-          }
-        }).then(done);
-      });
     });
   });
 });

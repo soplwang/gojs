@@ -5,7 +5,6 @@ exports.Channel = Channel;
 exports.go = go;
 exports.bind = bind;
 exports.then = then;
-exports.patchPromise = patchPromise;
 
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
 //
@@ -54,6 +53,7 @@ function Channel(arg) {
 function go(goroutine, arg) {
   var inst;
   var chan = Channel([]);
+  var promiseChan;
   var runq = chan;
 
   if (arguments.length <= 1) {
@@ -74,7 +74,7 @@ function go(goroutine, arg) {
       var iter = next(msg);
       if (iter.done) return;
       runq = iter.value || chan;
-      if (runq.ctor_ !== Channel) runq = chan;
+      if (runq.ctor_ !== Channel) fix();
     }
   })();
 
@@ -87,6 +87,16 @@ function go(goroutine, arg) {
       return inst.next(msg[1]);
     } else {
       return inst.next(msg.slice(1));
+    }
+  }
+
+  function fix() {
+    if (typeof runq.then !== 'function') {
+      runq = chan;
+    } else {
+      if (!promiseChan) promiseChan = Channel();
+      runq.then(function (val) { promiseChan(null, val); }, promiseChan);
+      runq = promiseChan;
     }
   }
 }
@@ -139,19 +149,5 @@ function then(err, cb) {
       for (var i = 1; i < l; i++) args[i-1] = arguments[i];
       cb.apply(null, args);
     }
-  };
-}
-
-/**
- * Patch ES6 Promise to add non-standard Promise#done() support
- * @param {Function(e, v)} cb - node.js style callback
- * @returns {Promise} - chaining promise
- */
-function patchPromise() {
-  Promise.prototype.done = function (cb) {
-    return this.then(
-      function (val) { cb(null, val); },
-      function (err) { cb(err); }
-      );
   };
 }
