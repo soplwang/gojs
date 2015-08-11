@@ -9,16 +9,16 @@ var then = require('../').then;
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
 //
 go(function* (ch) {
-  db.query('SELECT 1', ch);
-  var rows = yield ch;
-
-  request('http://www.google.com', ch);
-  var [resp, body] = yield;
+  var r1 = yield db.query('SELECT 1', ch);
+  var r2 = yield db.query('SELECT 2', ch);
 
   redis.hget('k1', ch);
   redis.get('k2', ch);
   var rk1 = yield;
   var rk2 = yield;
+
+  request('http://www.google.com', ch);
+  var [resp, body] = yield ch;
 
   go(function* (ch2) {
     db.query('SELECT 1', bind(ch2, 'r3'));

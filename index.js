@@ -21,17 +21,17 @@ function Channel(arg) {
   var waitq_ = [];
   for (var i = 0; i < l; i++) q_[i] = arguments[i];
 
-  chan.ctor_ = Channel;
-  chan.read = function () { return q_.shift(); }
-  chan.wait = wait;
-  return chan;
-
   function chan(arg) {
     var l = arguments.length;
     var args = new Array(l);
     for (var i = 0; i < l; i++) args[i] = arguments[i];
     return write(args);
   }
+
+  chan.ctor_ = Channel;
+  chan.read = function () { return q_.shift(); }
+  chan.wait = wait;
+  return chan;
 
   function write(msg) {
     q_.push(msg);
