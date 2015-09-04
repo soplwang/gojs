@@ -26,8 +26,8 @@ go(function* (ch) {
   var rk2 = yield;
 
   go(function* (ch2) {
-    db.query('SELECT 1', bind(ch2, 'r3'));
-    db2.query('SELECT 3', bind(ch2, 'r4'));
+    db.query('SELECT 1', bind(ch2, 'q1'));
+    db2.query('SELECT 3', bind(ch2, 'q2'));
     var [id, rx] = yield;
     var [id, ry] = yield;
     ch(null, rx + ry);
