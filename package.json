@@ -1,7 +1,7 @@
 {
-  "name": "gojs",
+  "name": "goes",
   "version": "0.4.3",
-  "description": "go.js, Golang like channels, goroutine and go.",
+  "description": "goes, Golang like channels, goroutine and go for ES2015.",
   "main": "index.js",
   "scripts": {
     "test": "mocha -R spec",
