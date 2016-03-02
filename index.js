@@ -1,6 +1,14 @@
 /* Copyright 2015, Wang Wenlin */
 "use strict";
 
+/** TODO:
+ - [ ] Move go() channel param to last always for consistence, i.e., go(function (..., ch))
+ - [ ] Add co() helper to generate wrapped goroutine
+ - [ ] Yielding channel temprory switch to sync mode
+ - [ ] Use Symbol to tag a Channel class
+ - [ ] Use let, for..of on generator, etc.
+ */
+
 exports.Channel = Channel;
 exports.go = go;
 exports.bind = bind;
