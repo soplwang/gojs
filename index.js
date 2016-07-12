@@ -6,13 +6,13 @@
  - [ ] Add co() helper to generate wrapped goroutine
  - [ ] Yielding channel temprory switch to sync mode
  - [ ] Use Symbol to tag a Channel class
- - [ ] Use let, for..of on generator, etc.
  */
 
 exports.Channel = Channel;
 exports.go = go;
 exports.bind = bind;
 exports.then = then;
+
 
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
 //

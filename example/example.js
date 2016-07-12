@@ -7,6 +7,7 @@ var bind = require('../').bind;
 var then = require('../').then;
 var read = require('../').read;
 
+
 // Ref: http://swannodette.github.io/2013/08/24/es6-generators-and-csp/
 //
 go(function* (ch) {
